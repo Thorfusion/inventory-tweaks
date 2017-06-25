@@ -7,21 +7,21 @@ import invtweaks.api.container.ContainerSection;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * ModLoader entry point to load and configure the mod.
  *
  * @author Jimeo Wan
- *         <p/>
+ *         <p>
  *         Contact: jimeo.wan (at) gmail (dot) com Website: <a href="https://inventory-tweaks.readthedocs.org/">https://inventory-tweaks.readthedocs.org/</a>
  *         Source code: <a href="https://github.com/kobata/inventory-tweaks">GitHub</a> License: MIT
  */
 @Mod(modid = "inventorytweaks",
-        dependencies = "required-after:Forge@[11.14.3,)",
+        dependencies = "required-after:forge@[13.19.1,)",
         acceptableRemoteVersions = "*",
+        acceptedMinecraftVersions = "",
         guiFactory = "invtweaks.forge.ModGuiFactory")
 public class InvTweaksMod implements InvTweaksAPI {
     @Mod.Instance
@@ -54,6 +54,17 @@ public class InvTweaksMod implements InvTweaksAPI {
         proxy.postInit(e);
     }
 
+    @Mod.EventHandler
+    @SuppressWarnings("unused")
+    public void serverAboutToStart(@NotNull FMLServerAboutToStartEvent e) {
+        proxy.serverAboutToStart(e);
+    }
+
+    @Mod.EventHandler
+    @SuppressWarnings("unused")
+    public void serverStopped(FMLServerStoppedEvent e) {
+        proxy.serverStopped(e);
+    }
     @Override
     public void addOnLoadListener(IItemTreeListener listener) {
         proxy.addOnLoadListener(listener);
@@ -75,7 +86,7 @@ public class InvTweaksMod implements InvTweaksAPI {
     }
 
     @Override
-    public int compareItems(ItemStack i, ItemStack j) {
+    public int compareItems(@NotNull ItemStack i, @NotNull ItemStack j) {
         return proxy.compareItems(i, j);
     }
 

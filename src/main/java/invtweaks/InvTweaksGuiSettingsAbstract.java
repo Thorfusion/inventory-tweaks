@@ -3,8 +3,9 @@ package invtweaks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.text.translation.I18n;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.Point;
 
@@ -28,9 +29,9 @@ public abstract class InvTweaksGuiSettingsAbstract extends GuiScreen {
 
     public InvTweaksGuiSettingsAbstract(Minecraft mc_, GuiScreen parentScreen_, InvTweaksConfig config_) {
 
-        LABEL_DONE = StatCollector.translateToLocal("invtweaks.settings.exit");
-        ON = ": " + StatCollector.translateToLocal("invtweaks.settings.on");
-        OFF = ": " + StatCollector.translateToLocal("invtweaks.settings.off");
+        LABEL_DONE = I18n.translateToLocal("invtweaks.settings.exit");
+        ON = ": " + I18n.translateToLocal("invtweaks.settings.on");
+        OFF = ": " + I18n.translateToLocal("invtweaks.settings.off");
 
         mc = mc_;
         obf = new InvTweaksObfuscation(mc_);
@@ -40,9 +41,8 @@ public abstract class InvTweaksGuiSettingsAbstract extends GuiScreen {
 
     @Override
     public void initGui() {
-        @SuppressWarnings("unchecked")
-        List<Object> controlList = buttonList;
-        Point p = new Point();
+        List<GuiButton> controlList = buttonList;
+        @NotNull Point p = new Point();
         moveToButtonCoords(1, p);
         controlList.add(new GuiButton(ID_DONE, p.getX() + 55, height / 6 + 168, LABEL_DONE)); // GuiButton
 
@@ -54,13 +54,13 @@ public abstract class InvTweaksGuiSettingsAbstract extends GuiScreen {
     @Override
     public void drawScreen(int i, int j, float f) {
         drawDefaultBackground();
-        drawCenteredString(obf.getFontRenderer(), StatCollector.translateToLocal("invtweaks.settings.title"),
+        drawCenteredString(obf.getFontRenderer(), I18n.translateToLocal("invtweaks.settings.title"),
                 width / 2, 20, 0xffffff);
         super.drawScreen(i, j, f);
     }
 
     @Override
-    protected void actionPerformed(GuiButton guibutton) {
+    protected void actionPerformed(@NotNull GuiButton guibutton) {
         // GuiButton
         if(guibutton.id == ID_DONE) {
             obf.displayGuiScreen(parentScreen);
@@ -74,19 +74,20 @@ public abstract class InvTweaksGuiSettingsAbstract extends GuiScreen {
         }
     }
 
-    protected void moveToButtonCoords(int buttonOrder, Point p) {
+    protected void moveToButtonCoords(int buttonOrder, @NotNull Point p) {
         p.setX(width / 2 - 155 + ((buttonOrder + 1) % 2) * 160);
         p.setY(height / 6 + (buttonOrder / 2) * 24);
     }
 
-    protected void toggleBooleanButton(GuiButton guibutton, String property, String label) {
-        Boolean enabled = !Boolean.valueOf(config.getProperty(property));
+    protected void toggleBooleanButton(@NotNull GuiButton guibutton, @NotNull String property, String label) {
+        @NotNull Boolean enabled = !Boolean.valueOf(config.getProperty(property));
         config.setProperty(property, enabled.toString());
         guibutton.displayString = computeBooleanButtonLabel(property, label);
     }
 
-    protected String computeBooleanButtonLabel(String property, String label) {
-        String propertyValue = config.getProperty(property);
+    @NotNull
+    protected String computeBooleanButtonLabel(@NotNull String property, String label) {
+        @NotNull String propertyValue = config.getProperty(property);
         Boolean enabled = Boolean.valueOf(propertyValue);
         return label + ((enabled) ? ON : OFF);
     }

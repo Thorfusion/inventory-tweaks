@@ -3,6 +3,8 @@ package invtweaks;
 import invtweaks.api.IItemTreeItem;
 import invtweaks.forge.ClientProxy;
 import net.minecraftforge.common.MinecraftForge;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.security.InvalidParameterException;
@@ -50,13 +52,14 @@ public class InvTweaksConfig {
     public static final String AUTOREFILL = "autorefill";
     public static final String AUTOREFILL_NOTHING = "nothing";
     public static final String DEBUG = "debug";
-    private File rulesFile;
-    private File treeFile;
+    private final File rulesFile;
+    private final File treeFile;
 
     private InvTweaksConfigProperties properties;
     private InvTweaksItemTree tree;
     private List<InvTweaksConfigInventoryRuleset> rulesets;
     private int currentRuleset = 0;
+    @Nullable
     private String currentRulesetName = null;
     private List<String> invalidKeywords;
 
@@ -71,6 +74,25 @@ public class InvTweaksConfig {
         treeFile = treeFile_;
 
         reset();
+    }
+
+    /**
+     * Returns the file when the properties are stored, after making sure the file exists.
+     *
+     * @return May return null in case of failure while creating the file.
+     */
+    private static File getPropertyFile() {
+        @NotNull File configPropsFile = InvTweaksConst.CONFIG_PROPS_FILE;
+        if(!configPropsFile.exists()) {
+            try {
+                //noinspection ResultOfMethodCallIgnored (already checking for existence)
+                configPropsFile.createNewFile();
+            } catch(IOException e) {
+                InvTweaks.logInGameStatic("invtweaks.propsfile.errors");
+                return null;
+            }
+        }
+        return configPropsFile;
     }
 
     public void load() throws Exception {
@@ -91,8 +113,8 @@ public class InvTweaksConfig {
             tree = InvTweaksItemTreeLoader.load(treeFile);
 
             // Read file
-            char[] bytes = new char[(int) rulesFile.length()];
-            FileReader reader = null;
+            @NotNull char[] bytes = new char[(int) rulesFile.length()];
+            @Nullable FileReader reader = null;
             try {
                 reader = new FileReader(rulesFile);
                 reader.read(bytes);
@@ -103,15 +125,15 @@ public class InvTweaksConfig {
             }
 
             // Split lines into an array
-            String[] configLines = String.valueOf(bytes).replace("\r\n", "\n").replace('\r', '\n').split("\n");
+            @NotNull String[] configLines = String.valueOf(bytes).replace("\r\n", "\n").replace('\r', '\n').split("\n");
 
             // Register rules in various configurations (rulesets)
-            InvTweaksConfigInventoryRuleset activeRuleset = new InvTweaksConfigInventoryRuleset(tree, "Default");
+            @NotNull InvTweaksConfigInventoryRuleset activeRuleset = new InvTweaksConfigInventoryRuleset(tree, "Default");
             boolean defaultRuleset = true, defaultRulesetEmpty = true;
             String invalidKeyword;
 
-            for(String line : configLines) {
-                String trimmedLine = line.trim();
+            for(@NotNull String line : configLines) {
+                @NotNull String trimmedLine = line.trim();
                 if(!trimmedLine.isEmpty()) {
                     // Change ruleset
                     if(trimmedLine.matches("^[\\w]*[\\s]*:$")) {
@@ -146,12 +168,12 @@ public class InvTweaksConfig {
             activeRuleset.finalizeRules();
             rulesets.add(activeRuleset);
 
-            // If a specific ruleset was loaded, 
+            // If a specific ruleset was loaded,
             // try to choose the same again, else load the first one
             currentRuleset = 0;
             if(currentRulesetName != null) {
                 int rulesetIndex = 0;
-                for(InvTweaksConfigInventoryRuleset ruleset : rulesets) {
+                for(@NotNull InvTweaksConfigInventoryRuleset ruleset : rulesets) {
                     if(ruleset.getName().equals(currentRulesetName)) {
                         currentRuleset = rulesetIndex;
                         break;
@@ -187,13 +209,13 @@ public class InvTweaksConfig {
      * Saves properties
      */
     public void saveProperties() {
-        File configPropsFile = getPropertyFile();
+        @Nullable File configPropsFile = getPropertyFile();
         assert configPropsFile != null;
         if(configPropsFile.exists()) {
             try {
-                FileOutputStream fos = new FileOutputStream(configPropsFile);
+                @Nullable FileOutputStream fos = new FileOutputStream(configPropsFile);
                 properties.store(fos,
-                        "Inventory Tweaks Configuration\n" + "(Regarding shortcuts, all key names can be found at: http://www.lwjgl.org/javadoc/org/lwjgl/input/Keyboard.html)");
+                        "Inventory Tweaks Configuration\n" + "(Regarding shortcuts, all key names can be found at: http://legacy.lwjgl.org/javadoc/org/lwjgl/input/Keyboard.html)");
                 fos.flush();
                 fos.close();
                 storedConfigLastModified = InvTweaksConst.CONFIG_PROPS_FILE.lastModified();
@@ -203,10 +225,11 @@ public class InvTweaksConfig {
         }
     }
 
-    public Map<String, String> getProperties(String prefix) {
-        Map<String, String> result = new HashMap<>();
+    @NotNull
+    public Map<String, String> getProperties(@NotNull String prefix) {
+        @NotNull Map<String, String> result = new HashMap<>();
         for(Object o : properties.keySet()) {
-            String key = (String) o;
+            @NotNull String key = (String) o;
             if(key.startsWith(prefix)) {
                 result.put(key, properties.getProperty(key));
             }
@@ -219,12 +242,13 @@ public class InvTweaksConfig {
      *
      * @return The value or "" (never null)
      */
-    public String getProperty(String key) {
+    @NotNull
+    public String getProperty(@NotNull String key) {
         String value = properties.getProperty(key);
         return (value != null) ? value : "";
     }
 
-    public int getIntProperty(String key) {
+    public int getIntProperty(@NotNull String key) {
         return Integer.parseInt(getProperty(key));
     }
 
@@ -237,6 +261,7 @@ public class InvTweaksConfig {
         return tree;
     }
 
+    @Nullable
     public String getCurrentRulesetName() {
         return currentRulesetName;
     }
@@ -245,6 +270,7 @@ public class InvTweaksConfig {
      * @param i from 0 to n-1, n being the number of available configurations.
      * @return null if the given ID is invalid or the config is already enabled
      */
+    @Nullable
     public String switchConfig(int i) {
         if(!rulesets.isEmpty() && i < rulesets.size() && i != currentRuleset) {
             currentRuleset = i;
@@ -255,6 +281,7 @@ public class InvTweaksConfig {
         }
     }
 
+    @Nullable
     public String switchConfig() {
         if(currentRuleset == -1) {
             return switchConfig(0);
@@ -296,7 +323,7 @@ public class InvTweaksConfig {
             List<IItemTreeItem> items = tree.getItems(itemID, itemDamage);
             List<String> autoReplaceRules = rulesets.get(currentRuleset).getAutoReplaceRules();
             boolean found = false;
-            for(String keyword : autoReplaceRules) {
+            for(@NotNull String keyword : autoReplaceRules) {
                 if(keyword.equals(AUTOREFILL_NOTHING)) {
                     return false;
                 }
@@ -328,7 +355,8 @@ public class InvTweaksConfig {
         properties.put(PROP_ENABLE_AUTO_EQUIP_ARMOR, VALUE_FALSE);
         properties.put(PROP_ENABLE_SERVER_ITEMSWAP, VALUE_TRUE);
         properties.put(PROP_ENABLE_CONFIG_LOADED_MESSAGE, VALUE_FALSE);
-        properties.put(PROP_ENABLE_CONTAINER_MIRRORING, VALUE_FALSE);
+        // TODO: Reenable when it doesn't just break everything
+        //properties.put(PROP_ENABLE_CONTAINER_MIRRORING, VALUE_FALSE);
         properties.put(PROP_INVERT_TOOL_DAMAGE, VALUE_TRUE);
 
         properties.put(PROP_SHORTCUT_ALL_ITEMS, "LCONTROL+LSHIFT, RCONTROL+RSHIFT");
@@ -344,10 +372,10 @@ public class InvTweaksConfig {
     }
 
     private void loadProperties() throws IOException {
-        File configPropsFile = getPropertyFile();
-        InvTweaksConfigProperties newProperties = new InvTweaksConfigProperties();
+        @Nullable File configPropsFile = getPropertyFile();
+        @NotNull InvTweaksConfigProperties newProperties = new InvTweaksConfigProperties();
         if(configPropsFile != null) {
-            FileInputStream fis = new FileInputStream(configPropsFile);
+            @NotNull FileInputStream fis = new FileInputStream(configPropsFile);
             newProperties.load(fis);
             fis.close();
         }
@@ -355,31 +383,12 @@ public class InvTweaksConfig {
 
         if(newProperties.get(PROP_VERSION) != null) {
             // Override default values
-            for(Entry<Object, Object> entry : newProperties.entrySet()) {
+            for(@NotNull Entry<Object, Object> entry : newProperties.entrySet()) {
                 properties.put(entry.getKey(), entry.getValue());
             }
         }
 
         properties.put(PROP_VERSION, InvTweaksConst.MOD_VERSION.split(" ")[0]);
-    }
-
-    /**
-     * Returns the file when the properties are stored, after making sure the file exists.
-     *
-     * @return May return null in case of failure while creating the file.
-     */
-    private static File getPropertyFile() {
-        File configPropsFile = InvTweaksConst.CONFIG_PROPS_FILE;
-        if(!configPropsFile.exists()) {
-            try {
-                //noinspection ResultOfMethodCallIgnored (already checking for existence)
-                configPropsFile.createNewFile();
-            } catch(IOException e) {
-                InvTweaks.logInGameStatic("invtweaks.propsfile.errors");
-                return null;
-            }
-        }
-        return configPropsFile;
     }
 
     public int getSortKeyCode() {

@@ -4,13 +4,13 @@ import invtweaks.api.container.ContainerSection;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 public interface IContainerManager {
     int DROP_SLOT = -999;
-    int HOTBAR_SIZE = 9;
 
     /**
      * Moves a stack from source to destination, adapting the behavior according to the context: - If destination is
@@ -95,6 +95,7 @@ public interface IContainerManager {
      */
     boolean isSlotEmpty(ContainerSection section, int slot);
 
+    @Nullable
     Slot getSlot(ContainerSection section, int index);
 
     /**
@@ -116,6 +117,7 @@ public interface IContainerManager {
      *
      * @return null if the slot number is invalid.
      */
+    @Nullable
     ContainerSection getSlotSection(int slotNumber);
 
     /**
@@ -123,6 +125,7 @@ public interface IContainerManager {
      *
      * @return An ItemStack or null.
      */
+    @NotNull
     ItemStack getItemStack(ContainerSection section, int index);
 
     Container getContainer();

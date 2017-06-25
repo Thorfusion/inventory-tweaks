@@ -5,9 +5,10 @@ import invtweaks.api.container.ContainerSection;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Allows to perform various operations on a single section of the inventory and/or containers. Works in both single and
@@ -41,15 +42,15 @@ public class ContainerSectionManager {
         return containerMgr.moveSome(section, srcIndex, section, destIndex, amount);
     }
 
-    public boolean drop(int srcIndex) throws TimeoutException {
+    public boolean drop(int srcIndex) {
         return containerMgr.drop(section, srcIndex);
     }
 
-    public void leftClick(int index) throws TimeoutException {
+    public void leftClick(int index) {
         containerMgr.leftClick(section, index);
     }
 
-    public void click(int index, boolean rightClick) throws TimeoutException {
+    public void click(int index, boolean rightClick) {
         containerMgr.click(section, index, rightClick);
     }
 
@@ -65,10 +66,12 @@ public class ContainerSectionManager {
         return containerMgr.getFirstEmptyIndex(section);
     }
 
+    @Nullable
     public Slot getSlot(int index) {
         return containerMgr.getSlot(section, index);
     }
 
+    @NotNull
     public ItemStack getItemStack(int index) throws NullPointerException, IndexOutOfBoundsException {
         return containerMgr.getItemStack(section, index);
     }

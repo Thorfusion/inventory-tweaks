@@ -12,18 +12,19 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.input.Keyboard;
 
 public class ClientProxy extends CommonProxy {
@@ -33,7 +34,7 @@ public class ClientProxy extends CommonProxy {
     private InvTweaks instance;
 
     @Override
-    public void preInit(FMLPreInitializationEvent e) {
+    public void preInit(@NotNull FMLPreInitializationEvent e) {
         super.preInit(e);
 
         InvTweaks.log = e.getModLog();
@@ -48,12 +49,22 @@ public class ClientProxy extends CommonProxy {
         Minecraft mc = FMLClientHandler.instance().getClient();
         // Instantiate mod core
         instance = new InvTweaks(mc);
-        ForgeClientTick clientTick = new ForgeClientTick(instance);
-
-        FMLCommonHandler.instance().bus().register(clientTick);
-        MinecraftForge.EVENT_BUS.register(this);
 
         ClientRegistry.registerKeyBinding(KEYBINDING_SORT);
+    }
+
+    @SubscribeEvent
+    public void onTick(@NotNull TickEvent.ClientTickEvent tick) {
+        if(tick.phase == TickEvent.Phase.START) {
+            Minecraft mc = FMLClientHandler.instance().getClient();
+            if(mc.world != null && mc.player != null) {
+                if(mc.currentScreen != null) {
+                    instance.onTickInGUI(mc.currentScreen);
+                } else {
+                    instance.onTickInGame();
+                }
+            }
+        }
     }
 
     @SubscribeEvent
@@ -77,8 +88,8 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void slotClick(PlayerControllerMP playerController, int windowId, int slot, int data, int action,
-                          EntityPlayer player) {
+    public void slotClick(@NotNull PlayerControllerMP playerController, int windowId, int slot, int data, @NotNull ClickType action,
+                          @NotNull EntityPlayer player) {
         //int modiferKeys = (shiftHold) ? 1 : 0 /* XXX Placeholder */;
         if(serverSupportEnabled) {
             player.openContainer.slotClick(slot, data, action, player);
@@ -117,7 +128,7 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public int compareItems(ItemStack i, ItemStack j) {
+    public int compareItems(@NotNull ItemStack i, @NotNull ItemStack j) {
         return instance.compareItems(i, j);
     }
 
@@ -125,7 +136,7 @@ public class ClientProxy extends CommonProxy {
     public void sort(ContainerSection section, SortingMethod method) {
         // TODO: This seems like something useful enough to be a util method somewhere.
         Minecraft mc = FMLClientHandler.instance().getClient();
-        Container currentContainer = mc.thePlayer.inventoryContainer;
+        Container currentContainer = mc.player.inventoryContainer;
         if(InvTweaksObfuscation.isGuiContainer(mc.currentScreen)) {
             currentContainer = ((GuiContainer) mc.currentScreen).inventorySlots;
         }
@@ -139,7 +150,7 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void addClientScheduledTask(Runnable task) {
+    public void addClientScheduledTask(@NotNull Runnable task) {
         Minecraft.getMinecraft().addScheduledTask(task);
     }
 

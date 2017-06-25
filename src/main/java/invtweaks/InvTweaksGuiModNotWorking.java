@@ -3,7 +3,8 @@ package invtweaks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.text.translation.I18n;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A help menu for the NoCheatPlus conflict.
@@ -20,18 +21,18 @@ public class InvTweaksGuiModNotWorking extends InvTweaksGuiSettingsAbstract {
         super.drawScreen(i, j, f);
 
         int x = width / 2;
-        drawCenteredString(obf.getFontRenderer(), StatCollector.translateToLocal("invtweaks.help.bugsorting.pt1"), x,
+        drawCenteredString(obf.getFontRenderer(), I18n.translateToLocal("invtweaks.help.bugsorting.pt1"), x,
                 80, 0xBBBBBB);
-        drawCenteredString(obf.getFontRenderer(), StatCollector.translateToLocal("invtweaks.help.bugsorting.pt2"), x,
+        drawCenteredString(obf.getFontRenderer(), I18n.translateToLocal("invtweaks.help.bugsorting.pt2"), x,
                 95, 0xBBBBBB);
-        drawCenteredString(obf.getFontRenderer(), StatCollector.translateToLocal("invtweaks.help.bugsorting.pt3"), x,
+        drawCenteredString(obf.getFontRenderer(), I18n.translateToLocal("invtweaks.help.bugsorting.pt3"), x,
                 110, 0xBBBBBB);
-        drawCenteredString(obf.getFontRenderer(), StatCollector.translateToLocal("invtweaks.help.bugsorting.pt4"), x,
+        drawCenteredString(obf.getFontRenderer(), I18n.translateToLocal("invtweaks.help.bugsorting.pt4"), x,
                 150, 0xFFFF99);
     }
 
     @Override
-    protected void actionPerformed(GuiButton guibutton) {
+    protected void actionPerformed(@NotNull GuiButton guibutton) {
         // GuiButton
         switch(guibutton.id) {
             // Back to main settings screen

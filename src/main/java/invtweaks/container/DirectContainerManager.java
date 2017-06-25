@@ -1,17 +1,20 @@
 package invtweaks.container;
 
 import invtweaks.InvTweaks;
-import invtweaks.InvTweaksConst;
 import invtweaks.InvTweaksObfuscation;
 import invtweaks.api.container.ContainerSection;
 import invtweaks.forge.InvTweaksMod;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static net.minecraft.inventory.ClickType.PICKUP;
 
 /**
  * Allows to perform various operations on the inventory and/or containers. Works in both single and multiplayer.
@@ -22,30 +25,23 @@ public class DirectContainerManager implements IContainerManager {
 
     // TODO: Throw errors when the container isn't available anymore
 
-    private Container container;
+    @NotNull
+    private final Container container;
+    @NotNull
     private Map<ContainerSection, List<Slot>> slotRefs = new HashMap<>();
 
     // TODO: Refactor the mouse-coverage stuff that needs the GuiContainer into a different class.
-    public DirectContainerManager(Container cont) {
+    public DirectContainerManager(@NotNull Container cont) {
         container = cont;
         initSlots();
     }
 
     private void initSlots() {
-        slotRefs = InvTweaksObfuscation.getContainerSlotMap(container);
-        if(slotRefs == null) {
+        @Nullable Map<ContainerSection, List<Slot>> refs = InvTweaksObfuscation.getContainerSlotMap(container);
+        if(refs == null) {
             slotRefs = new HashMap<>();
-        }
-
-        // TODO: Detect if there is a big enough unassigned section for inventory.
-        @SuppressWarnings("unchecked")
-        List<Slot> slots = (List<Slot>) container.inventorySlots;
-        int size = slots.size();
-        if(size >= InvTweaksConst.INVENTORY_SIZE && !slotRefs.containsKey(ContainerSection.INVENTORY)) {
-            slotRefs.put(ContainerSection.INVENTORY, slots.subList(size - InvTweaksConst.INVENTORY_SIZE, size));
-            slotRefs.put(ContainerSection.INVENTORY_NOT_HOTBAR,
-                    slots.subList(size - InvTweaksConst.INVENTORY_SIZE, size - HOTBAR_SIZE));
-            slotRefs.put(ContainerSection.INVENTORY_HOTBAR, slots.subList(size - HOTBAR_SIZE, size));
+        } else {
+            slotRefs = refs;
         }
     }
 
@@ -63,10 +59,10 @@ public class DirectContainerManager implements IContainerManager {
     // TODO: Server helper directly implementing this as a swap without the need for intermediate slots.
     @Override
     public boolean move(ContainerSection srcSection, int srcIndex, ContainerSection destSection, int destIndex) {
-        ItemStack srcStack = getItemStack(srcSection, srcIndex);
-        ItemStack destStack = getItemStack(destSection, destIndex);
+        @NotNull ItemStack srcStack = getItemStack(srcSection, srcIndex);
+        @NotNull ItemStack destStack = getItemStack(destSection, destIndex);
 
-        if(srcStack == null && destIndex != DROP_SLOT) {
+        if(srcStack.isEmpty() && destIndex != DROP_SLOT) {
             return false;
         } else if(srcSection == destSection && srcIndex == destIndex) {
             return true;
@@ -75,7 +71,7 @@ public class DirectContainerManager implements IContainerManager {
         // Mod support -- some mods play tricks with slots to display an item but not let it be interacted with.
         // (Specifically forestry backpack UI)
         if(destIndex != DROP_SLOT) {
-            Slot destSlot = getSlot(destSection, destIndex);
+            @Nullable Slot destSlot = getSlot(destSection, destIndex);
             if(!destSlot.isItemValid(srcStack)) {
                 return false;
             }
@@ -83,7 +79,7 @@ public class DirectContainerManager implements IContainerManager {
 
 
         // Put hold item down
-        if(InvTweaks.getInstance().getHeldStack() != null) {
+        if(!InvTweaks.getInstance().getHeldStack().isEmpty()) {
             int firstEmptyIndex = getFirstEmptyIndex(ContainerSection.INVENTORY);
             if(firstEmptyIndex != -1) {
                 leftClick(ContainerSection.INVENTORY, firstEmptyIndex);
@@ -93,18 +89,17 @@ public class DirectContainerManager implements IContainerManager {
         }
 
         // Use intermediate slot if we have to swap tools, maps, etc.
-        assert srcStack != null;
-        if(destStack != null && srcStack.getItem() == destStack.getItem() && (srcStack.getMaxStackSize() == 1 ||
-                srcStack.hasTagCompound() || destStack.hasTagCompound())) {
+        assert !srcStack.isEmpty();
+        if(!destStack.isEmpty() && !InvTweaksObfuscation.areItemsStackable(srcStack, destStack)) {
             int intermediateSlot = getFirstEmptyUsableSlotNumber();
-            ContainerSection intermediateSection = getSlotSection(intermediateSlot);
+            @Nullable ContainerSection intermediateSection = getSlotSection(intermediateSlot);
             int intermediateIndex = getSlotIndex(intermediateSlot);
             if(intermediateIndex != -1) {
-                Slot interSlot = getSlot(intermediateSection, intermediateIndex);
+                @Nullable Slot interSlot = getSlot(intermediateSection, intermediateIndex);
                 if(!interSlot.isItemValid(destStack)) {
                     return false;
                 }
-                Slot srcSlot = getSlot(srcSection, srcIndex);
+                @Nullable Slot srcSlot = getSlot(srcSection, srcIndex);
                 if(!srcSlot.isItemValid(destStack)) {
                     return false;
                 }
@@ -126,10 +121,10 @@ public class DirectContainerManager implements IContainerManager {
         else {
             leftClick(srcSection, srcIndex);
             leftClick(destSection, destIndex);
-            if(InvTweaks.getInstance().getHeldStack() != null) {
+            if(!InvTweaks.getInstance().getHeldStack().isEmpty()) {
                 // Only return to original slot if it can be placed in that slot.
                 // (Ex. crafting/furnace outputs)
-                Slot srcSlot = getSlot(srcSection, srcIndex);
+                @Nullable Slot srcSlot = getSlot(srcSection, srcIndex);
                 if(srcSlot.isItemValid(InvTweaks.getInstance().getHeldStack())) {
                     leftClick(srcSection, srcIndex);
                 } else {
@@ -163,17 +158,16 @@ public class DirectContainerManager implements IContainerManager {
     @Override
     public boolean moveSome(ContainerSection srcSection, int srcIndex, ContainerSection destSection, int destIndex,
                             int amount) {
-
-        ItemStack source = getItemStack(srcSection, srcIndex);
-        if(source == null || srcSection == destSection && srcIndex == destIndex) {
+        @NotNull ItemStack source = getItemStack(srcSection, srcIndex);
+        if(source.isEmpty() || srcSection == destSection && srcIndex == destIndex) {
             return true;
         }
 
-        ItemStack destination = getItemStack(srcSection, srcIndex);
-        int sourceSize = source.stackSize;
+        @NotNull ItemStack destination = getItemStack(srcSection, srcIndex);
+        int sourceSize = source.getCount();
         int movedAmount = Math.min(amount, sourceSize);
 
-        if(destination == null || InvTweaksObfuscation.areItemStacksEqual(source, destination)) {
+        if(destination.isEmpty() || InvTweaksObfuscation.areItemStacksEqual(source, destination)) {
 
             leftClick(srcSection, srcIndex);
             for(int i = 0; i < movedAmount; i++) {
@@ -196,9 +190,9 @@ public class DirectContainerManager implements IContainerManager {
      */
     @Override
     public boolean putHoldItemDown(ContainerSection destSection, int destIndex) {
-        ItemStack heldStack = InvTweaks.getInstance().getHeldStack();
-        if(heldStack != null) {
-            if(getItemStack(destSection, destIndex) == null) {
+        @NotNull ItemStack heldStack = InvTweaks.getInstance().getHeldStack();
+        if(!heldStack.isEmpty()) {
+            if(getItemStack(destSection, destIndex).isEmpty()) {
                 click(destSection, destIndex, false);
                 return true;
             }
@@ -215,7 +209,7 @@ public class DirectContainerManager implements IContainerManager {
         if(slot != -1) {
             int data = (rightClick) ? 1 : 0;
             InvTweaksMod.proxy
-                    .slotClick(InvTweaks.getInstance().getPlayerController(), container.windowId, slot, data, 0,
+                    .slotClick(InvTweaks.getInstance().getPlayerController(), container.windowId, slot, data, PICKUP,
                             InvTweaks.getInstance().getThePlayer());
         }
     }
@@ -236,7 +230,7 @@ public class DirectContainerManager implements IContainerManager {
     @Override
     public int getSize() {
         int result = 0;
-        for(List<Slot> slots : slotRefs.values()) {
+        for(@NotNull List<Slot> slots : slotRefs.values()) {
             result += slots.size();
         }
         return result;
@@ -262,7 +256,7 @@ public class DirectContainerManager implements IContainerManager {
     @Override
     public int getFirstEmptyIndex(ContainerSection section) {
         int i = 0;
-        for(Slot slot : slotRefs.get(section)) {
+        for(@NotNull Slot slot : slotRefs.get(section)) {
             if(!slot.getHasStack()) {
                 return i;
             }
@@ -276,9 +270,10 @@ public class DirectContainerManager implements IContainerManager {
      */
     @Override
     public boolean isSlotEmpty(ContainerSection section, int slot) {
-        return hasSection(section) && getItemStack(section, slot) == null;
+        return hasSection(section) && getItemStack(section, slot).isEmpty();
     }
 
+    @Nullable
     @Override
     public Slot getSlot(ContainerSection section, int index) {
         List<Slot> slots = slotRefs.get(section);
@@ -316,6 +311,7 @@ public class DirectContainerManager implements IContainerManager {
      *
      * @return null if the slot number is invalid.
      */
+    @Nullable
     @Override
     public ContainerSection getSlotSection(int slotNumber) {
         // TODO Caching with getSlotIndex
@@ -334,18 +330,20 @@ public class DirectContainerManager implements IContainerManager {
     /**
      * Returns an ItemStack from the wanted section and slot.
      *
-     * @return An ItemStack or null.
+     * @return An ItemStack or an empty stack.
      */
+    @NotNull
     @Override
     public ItemStack getItemStack(ContainerSection section, int index) {
         int slot = indexToSlot(section, index);
         if(slot >= 0 && slot < container.inventorySlots.size()) {
             return InvTweaksObfuscation.getSlotStack(container, slot);
         } else {
-            return null;
+            return ItemStack.EMPTY;
         }
     }
 
+    @NotNull
     @Override
     public Container getContainer() {
         return container;
@@ -353,7 +351,7 @@ public class DirectContainerManager implements IContainerManager {
 
     private int getFirstEmptyUsableSlotNumber() {
         for(ContainerSection section : slotRefs.keySet()) {
-            for(Slot slot : slotRefs.get(section)) {
+            for(@NotNull Slot slot : slotRefs.get(section)) {
                 // Use only standard slot (to make sure
                 // we can freely put and remove items there)
                 if(InvTweaksObfuscation.isBasicSlot(slot) && !slot.getHasStack()) {

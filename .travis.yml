@@ -2,8 +2,9 @@ language: java
 jdk:
   - oraclejdk8
 install: ./gradlew setupCI
-script: ./gradlew build curse
+script: ./gradlew build curseforge
 sudo: false
-notifications:
-  irc:
-    - "irc.esper.net#inventorytweaks"
+branches:
+  only:
+    - develop
+    - release

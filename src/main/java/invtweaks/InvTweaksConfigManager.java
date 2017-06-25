@@ -2,8 +2,11 @@ package invtweaks;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.text.translation.I18n;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.List;
@@ -23,14 +26,42 @@ public class InvTweaksConfigManager {
     /**
      * The mod's configuration.
      */
+    @Nullable
     private InvTweaksConfig config = null;
     private long storedConfigLastModified = 0;
 
+    @Nullable
     private InvTweaksHandlerAutoRefill autoRefillHandler = null;
+    @Nullable
     private InvTweaksHandlerShortcuts shortcutsHandler = null;
 
     public InvTweaksConfigManager(Minecraft mc_) {
         mc = mc_;
+    }
+
+    private static long computeConfigLastModified() {
+        return InvTweaksConst.CONFIG_RULES_FILE.lastModified() + InvTweaksConst.CONFIG_TREE_FILE.lastModified();
+    }
+
+    private static void backupFile(@NotNull File file) {
+        @NotNull File newFile = new File(file.getParentFile(), file.getName() + ".bak");
+        log.warn("Backing up file: %1$s to %2$s", file.getAbsolutePath(), newFile.getAbsolutePath());
+        if(newFile.exists()) {
+            log.warn("New file %1$s already exists, deleting old.", newFile.getAbsolutePath());
+            newFile.delete();
+        }
+        file.renameTo(newFile);
+    }
+
+    private static void showConfigErrors(@NotNull @SuppressWarnings("ParameterHidesMemberVariable") InvTweaksConfig config) {
+        List<String> invalid = config.getInvalidKeywords();
+        if(invalid.size() > 0) {
+            @NotNull String error = I18n.translateToLocal("invtweaks.loadconfig.invalidkeywords") + ": ";
+            for(String keyword : config.getInvalidKeywords()) {
+                error += keyword + " ";
+            }
+            InvTweaks.logInGameStatic(error);
+        }
     }
 
     // TODO Only reload modified file(s)
@@ -41,7 +72,7 @@ public class InvTweaksConfigManager {
             if(config != null && config.refreshProperties()) {
                 shortcutsHandler = new InvTweaksHandlerShortcuts(mc, config);
 
-                if(!config.getProperty(InvTweaksConfig.PROP_ENABLE_CONFIG_LOADED_MESSAGE).equals(InvTweaksConfig.VALUE_TRUE)) {
+                if(config.getProperty(InvTweaksConfig.PROP_ENABLE_CONFIG_LOADED_MESSAGE).equals(InvTweaksConfig.VALUE_TRUE)) {
                     InvTweaks.logInGameStatic("invtweaks.propsfile.loaded");
                 }
             }
@@ -60,20 +91,19 @@ public class InvTweaksConfigManager {
         }
     }
 
+    @Nullable
     public InvTweaksConfig getConfig() {
         return config;
     }
 
+    @Nullable
     public InvTweaksHandlerAutoRefill getAutoRefillHandler() {
         return autoRefillHandler;
     }
 
+    @Nullable
     public InvTweaksHandlerShortcuts getShortcutsHandler() {
         return shortcutsHandler;
-    }
-
-    private static long computeConfigLastModified() {
-        return InvTweaksConst.CONFIG_RULES_FILE.lastModified() + InvTweaksConst.CONFIG_TREE_FILE.lastModified();
     }
 
     /**
@@ -83,7 +113,7 @@ public class InvTweaksConfigManager {
     private boolean loadConfig() {
 
         // Ensure the config folder exists
-        File configDir = InvTweaksConst.MINECRAFT_CONFIG_DIR;
+        @NotNull File configDir = InvTweaksConst.MINECRAFT_CONFIG_DIR;
         if(!configDir.exists()) {
             configDir.mkdir();
         }
@@ -115,20 +145,20 @@ public class InvTweaksConfigManager {
         if(!InvTweaksConst.CONFIG_RULES_FILE.exists() && extractFile(InvTweaksConst.DEFAULT_CONFIG_FILE,
                 InvTweaksConst.CONFIG_RULES_FILE)) {
             InvTweaks.logInGameStatic(InvTweaksConst.CONFIG_RULES_FILE + " " +
-                    StatCollector.translateToLocal("invtweaks.loadconfig.filemissing"));
+                    I18n.translateToLocal("invtweaks.loadconfig.filemissing"));
         }
         if(!InvTweaksConst.CONFIG_TREE_FILE.exists() && extractFile(InvTweaksConst.DEFAULT_CONFIG_TREE_FILE,
                 InvTweaksConst.CONFIG_TREE_FILE)) {
             InvTweaks.logInGameStatic(InvTweaksConst.CONFIG_TREE_FILE + " " +
-                    StatCollector.translateToLocal("invtweaks.loadconfig.filemissing"));
+                    I18n.translateToLocal("invtweaks.loadconfig.filemissing"));
         }
 
         storedConfigLastModified = computeConfigLastModified();
 
         // Load
 
-        String error = null;
-        Exception errorException = null;
+        @Nullable String error = null;
+        @Nullable Exception errorException = null;
 
         try {
 
@@ -143,7 +173,7 @@ public class InvTweaksConfigManager {
             config.load();
             shortcutsHandler.loadShortcuts();
 
-            if(!config.getProperty(InvTweaksConfig.PROP_ENABLE_CONFIG_LOADED_MESSAGE).equals(InvTweaksConfig.VALUE_TRUE)) {
+            if(config.getProperty(InvTweaksConfig.PROP_ENABLE_CONFIG_LOADED_MESSAGE).equals(InvTweaksConfig.VALUE_TRUE)) {
                 InvTweaks.logInGameStatic("invtweaks.loadconfig.done");
             }
             showConfigErrors(config);
@@ -195,28 +225,10 @@ public class InvTweaksConfigManager {
         }
     }
 
-    private static void backupFile(File file) {
-        File newFile = new File(file.getName() + ".bak");
-        if(newFile.exists()) {
-            newFile.delete();
-        }
-        file.renameTo(newFile);
-    }
-
-    private boolean extractFile(ResourceLocation resource, File destination) {
-        InputStream input;
-        try {
-            input = mc.getResourceManager().getResource(resource).getInputStream();
-
-            byte[] contents = new byte[input.available()];
-            input.read(contents);
-            input.close();
-
+    private boolean extractFile(@NotNull ResourceLocation resource, @NotNull File destination) {
+        try(@NotNull InputStream input = mc.getResourceManager().getResource(resource).getInputStream()) {
             try {
-                FileOutputStream f = new FileOutputStream(destination);
-                f.write(contents);
-                f.close();
-
+                FileUtils.copyInputStreamToFile(input, destination);
                 return true;
             } catch(IOException e) {
                 InvTweaks.logInGameStatic("[16] The mod won't work, because " + destination + " creation failed!");
@@ -225,20 +237,8 @@ public class InvTweaksConfigManager {
             }
         } catch(IOException e) {
             InvTweaks.logInGameStatic("[15] The mod won't work, because " + resource + " extraction failed!");
-
             log.error("Cannot extract " + resource + " file: " + e.getMessage());
             return false;
-        }
-    }
-
-    private static void showConfigErrors(@SuppressWarnings("ParameterHidesMemberVariable") InvTweaksConfig config) {
-        List<String> invalid = config.getInvalidKeywords();
-        if(invalid.size() > 0) {
-            String error = StatCollector.translateToLocal("invtweaks.loadconfig.invalidkeywords") + ": ";
-            for(String keyword : config.getInvalidKeywords()) {
-                error += keyword + " ";
-            }
-            InvTweaks.logInGameStatic(error);
         }
     }
 

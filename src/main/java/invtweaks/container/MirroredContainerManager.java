@@ -1,13 +1,14 @@
 package invtweaks.container;
 
 import invtweaks.InvTweaks;
-import invtweaks.InvTweaksConst;
 import invtweaks.InvTweaksObfuscation;
 import invtweaks.api.container.ContainerSection;
 import invtweaks.forge.InvTweaksMod;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,11 +18,14 @@ import java.util.stream.Collectors;
 
 public class MirroredContainerManager implements IContainerManager {
     private ItemStack[] slotItems;
+    @Nullable
     private ItemStack heldItem;
+    @NotNull
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") // Partially implemented
     private List<ItemStack> droppedItems = new ArrayList<>();
     private Container container;
     private Map<ContainerSection, List<Integer>> itemRefs;
+    @Nullable
     private Map<ContainerSection, List<Slot>> slotRefs;
 
     public MirroredContainerManager(Container cont) {
@@ -33,18 +37,11 @@ public class MirroredContainerManager implements IContainerManager {
         }
 
         // TODO: Detect if there is a big enough unassigned section for inventory.
-        @SuppressWarnings("unchecked")
-        List<Slot> slots = (List<Slot>) container.inventorySlots;
+        List<Slot> slots = container.inventorySlots;
         int size = slots.size();
-        if(size >= InvTweaksConst.INVENTORY_SIZE && !slotRefs.containsKey(ContainerSection.INVENTORY)) {
-            slotRefs.put(ContainerSection.INVENTORY, slots.subList(size - InvTweaksConst.INVENTORY_SIZE, size));
-            slotRefs.put(ContainerSection.INVENTORY_NOT_HOTBAR,
-                    slots.subList(size - InvTweaksConst.INVENTORY_SIZE, size - HOTBAR_SIZE));
-            slotRefs.put(ContainerSection.INVENTORY_HOTBAR, slots.subList(size - HOTBAR_SIZE, size));
-        }
 
         itemRefs = new HashMap<>();
-        for(Map.Entry<ContainerSection, List<Slot>> section : slotRefs.entrySet()) {
+        for(@NotNull Map.Entry<ContainerSection, List<Slot>> section : slotRefs.entrySet()) {
             List<Integer> slotIndices = section.getValue().stream().map(slots::indexOf).collect(Collectors.toList());
 
             itemRefs.put(section.getKey(), slotIndices);
@@ -69,11 +66,11 @@ public class MirroredContainerManager implements IContainerManager {
 
         int destSlotIdx = slotPositionToIndex(destSection, destIndex);
 
-        Slot srcSlot = getSlot(srcSection, srcIndex);
-        Slot destSlot = getSlot(destSection, destIndex);
+        @NotNull Slot srcSlot = getSlot(srcSection, srcIndex);
+        @NotNull Slot destSlot = getSlot(destSection, destIndex);
 
-        ItemStack srcItem = slotItems[srcSlotIdx];
-        ItemStack destItem = slotItems[destSlotIdx];
+        @NotNull ItemStack srcItem = slotItems[srcSlotIdx];
+        @NotNull ItemStack destItem = slotItems[destSlotIdx];
 
         if(srcItem != null && !destSlot.isItemValid(srcItem)) {
             return false;
@@ -140,7 +137,7 @@ public class MirroredContainerManager implements IContainerManager {
     public int getFirstEmptyIndex(ContainerSection section) {
         int i = 0;
         for(int slot : itemRefs.get(section)) {
-            if(slotItems[slot] == null) {
+            if(slotItems[slot].isEmpty()) {
                 return i;
             }
             i++;
@@ -150,9 +147,10 @@ public class MirroredContainerManager implements IContainerManager {
 
     @Override
     public boolean isSlotEmpty(ContainerSection section, int slot) {
-        return getItemStack(section, slot) == null;
+        return getItemStack(section, slot).isEmpty();
     }
 
+    @NotNull
     @Override
     public Slot getSlot(ContainerSection section, int index) {
         return container.getSlot(slotPositionToIndex(section, index));
@@ -175,6 +173,7 @@ public class MirroredContainerManager implements IContainerManager {
         return -1;
     }
 
+    @Nullable
     @Override
     public ContainerSection getSlotSection(int slotNumber) {
         // TODO Caching with getSlotIndex
@@ -191,6 +190,7 @@ public class MirroredContainerManager implements IContainerManager {
     }
 
     @Override
+    @NotNull
     public ItemStack getItemStack(ContainerSection section, int index) {
         return slotItems[slotPositionToIndex(section, index)];
     }
@@ -205,6 +205,7 @@ public class MirroredContainerManager implements IContainerManager {
         // TODO: Figure out what is needed to match container with virtual inventory.
         InvTweaksMod.proxy.sortComplete();
     }
+
     /**
      * Converts section/index values to slot ID.
      *

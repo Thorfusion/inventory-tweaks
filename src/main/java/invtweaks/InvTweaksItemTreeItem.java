@@ -1,7 +1,10 @@
 package invtweaks;
 
 import invtweaks.api.IItemTreeItem;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -13,8 +16,10 @@ import java.util.Objects;
 public class InvTweaksItemTreeItem implements IItemTreeItem {
 
     private String name;
+    @Nullable
     private String id;
     private int damage;
+    private NBTTagCompound extraData;
     private int order;
 
     /**
@@ -23,10 +28,11 @@ public class InvTweaksItemTreeItem implements IItemTreeItem {
      * @param damage_ The item variant or InvTweaksConst.DAMAGE_WILDCARD
      * @param order_  The item order while sorting
      */
-    public InvTweaksItemTreeItem(String name_, String id_, int damage_, int order_) {
+    public InvTweaksItemTreeItem(String name_, String id_, int damage_, NBTTagCompound extraData_, int order_) {
         name = name_;
         id = InvTweaksObfuscation.getNamespacedID(id_);
         damage = damage_;
+        extraData = extraData_;
         order = order_;
     }
 
@@ -35,6 +41,7 @@ public class InvTweaksItemTreeItem implements IItemTreeItem {
         return name;
     }
 
+    @Nullable
     @Override
     public String getId() {
         return id;
@@ -46,6 +53,11 @@ public class InvTweaksItemTreeItem implements IItemTreeItem {
     }
 
     @Override
+    public NBTTagCompound getExtraData() {
+        return extraData;
+    }
+
+    @Override
     public int getOrder() {
         return order;
     }
@@ -54,12 +66,14 @@ public class InvTweaksItemTreeItem implements IItemTreeItem {
      * Warning: the item equality is not reflective. They are equal if "o" matches the item constraints (the opposite
      * can be false).
      */
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if(o == null || !(o instanceof IItemTreeItem)) {
             return false;
         }
-        IItemTreeItem item = (IItemTreeItem) o;
-        return Objects.equals(id, item.getId()) && (damage == InvTweaksConst.DAMAGE_WILDCARD || damage == item.getDamage());
+        @Nullable IItemTreeItem item = (IItemTreeItem) o;
+        return Objects.equals(id, item.getId())
+                && NBTUtil.areNBTEquals(extraData, item.getExtraData(), true)
+                && (damage == InvTweaksConst.DAMAGE_WILDCARD || damage == item.getDamage());
     }
 
     public String toString() {

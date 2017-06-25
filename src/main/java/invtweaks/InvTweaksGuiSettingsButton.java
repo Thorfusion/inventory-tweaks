@@ -4,6 +4,8 @@ import invtweaks.api.container.ContainerSection;
 import invtweaks.container.ContainerSectionManager;
 import net.minecraft.client.Minecraft;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.TimeoutException;
 
@@ -22,11 +24,11 @@ public class InvTweaksGuiSettingsButton extends InvTweaksGuiIconButton {
     }
 
     @Override
-    public void drawButton(Minecraft minecraft, int i, int j) {
+    public void drawButton(@NotNull Minecraft minecraft, int i, int j) {
         super.drawButton(minecraft, i, j);
 
         // Display string
-        InvTweaksObfuscation obf = new InvTweaksObfuscation(minecraft);
+        @NotNull InvTweaksObfuscation obf = new InvTweaksObfuscation(minecraft);
         drawCenteredString(obf.getFontRenderer(), displayString, xPosition + 5, yPosition - 1,
                 getTextColor(i, j));
     }
@@ -37,8 +39,8 @@ public class InvTweaksGuiSettingsButton extends InvTweaksGuiIconButton {
     @Override
     public boolean mousePressed(Minecraft minecraft, int i, int j) {
 
-        InvTweaksObfuscation obf = new InvTweaksObfuscation(minecraft);
-        InvTweaksConfig config = cfgManager.getConfig();
+        @NotNull InvTweaksObfuscation obf = new InvTweaksObfuscation(minecraft);
+        @Nullable InvTweaksConfig config = cfgManager.getConfig();
 
         if(super.mousePressed(minecraft, i, j)) {
             // Put hold item down if necessary
@@ -46,17 +48,13 @@ public class InvTweaksGuiSettingsButton extends InvTweaksGuiIconButton {
 
             try {
                 containerMgr = new ContainerSectionManager(ContainerSection.INVENTORY);
-                if(obf.getHeldStack() != null) {
-                    try {
-                        // Put hold item down
-                        for(int k = containerMgr.getSize() - 1; k >= 0; k--) {
-                            if(containerMgr.getItemStack(k) == null) {
-                                containerMgr.leftClick(k);
-                                break;
-                            }
+                if(!obf.getHeldStack().isEmpty()) {
+                    // Put hold item down
+                    for(int k = containerMgr.getSize() - 1; k >= 0; k--) {
+                        if(containerMgr.getItemStack(k).isEmpty()) {
+                            containerMgr.leftClick(k);
+                            break;
                         }
-                    } catch(TimeoutException e) {
-                        InvTweaks.logInGameErrorStatic("invtweaks.sort.releaseitem.error", e);
                     }
                 }
             } catch(Exception e) {

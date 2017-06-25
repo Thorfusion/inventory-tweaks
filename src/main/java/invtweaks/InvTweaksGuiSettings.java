@@ -3,7 +3,8 @@ package invtweaks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.text.translation.I18n;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.util.Point;
 
 import java.awt.*;
@@ -34,69 +35,73 @@ public class InvTweaksGuiSettings extends InvTweaksGuiSettingsAbstract {
     private static String labelMoreOptions;
     private static String labelBugSorting;
 
+    @SuppressWarnings("unused")
+    public InvTweaksGuiSettings(GuiScreen parentScreen_) {
+        this(Minecraft.getMinecraft(), parentScreen_, InvTweaks.getConfigManager().getConfig());
+    }
+
     public InvTweaksGuiSettings(Minecraft mc_, GuiScreen parentScreen_, InvTweaksConfig config_) {
         super(mc_, parentScreen_, config_);
 
-        labelMiddleClick = StatCollector.translateToLocal("invtweaks.settings.middleclick");
-        labelShortcuts = StatCollector.translateToLocal("invtweaks.settings.shortcuts");
-        labelAutoRefill = StatCollector.translateToLocal("invtweaks.settings.autorefill");
-        labelAutoRefillBeforeBreak = StatCollector.translateToLocal("invtweaks.settings.beforebreak");
-        labelMoreOptions = StatCollector.translateToLocal("invtweaks.settings.moreoptions");
-        labelBugSorting = StatCollector.translateToLocal("invtweaks.help.bugsorting");
+        labelMiddleClick = I18n.translateToLocal("invtweaks.settings.middleclick");
+        labelShortcuts = I18n.translateToLocal("invtweaks.settings.shortcuts");
+        labelAutoRefill = I18n.translateToLocal("invtweaks.settings.autorefill");
+        labelAutoRefillBeforeBreak = I18n.translateToLocal("invtweaks.settings.beforebreak");
+        labelMoreOptions = I18n.translateToLocal("invtweaks.settings.moreoptions");
+        labelBugSorting = I18n.translateToLocal("invtweaks.help.bugsorting");
     }
 
     @Override
     public void initGui() {
         super.initGui();
 
-        @SuppressWarnings("unchecked")
-        List<Object> controlList = buttonList;
-        Point p = new Point();
+        List<GuiButton> controlList = buttonList;
+        @NotNull Point p = new Point();
         int i = 0;
 
         // Create large buttons
 
         moveToButtonCoords(1, p);
         controlList.add(new GuiButton(ID_EDITRULES, p.getX() + 55, height / 6 + 96,
-                StatCollector.translateToLocal("invtweaks.settings.rulesfile")));
+                I18n.translateToLocal("invtweaks.settings.rulesfile")));
         controlList.add(new GuiButton(ID_EDITTREE, p.getX() + 55, height / 6 + 120,
-                StatCollector.translateToLocal("invtweaks.settings.treefile")));
+                I18n.translateToLocal("invtweaks.settings.treefile")));
         controlList.add(new GuiButton(ID_HELP, p.getX() + 55, height / 6 + 144,
-                StatCollector.translateToLocal("invtweaks.settings.onlinehelp")));
+                I18n.translateToLocal("invtweaks.settings.onlinehelp")));
 
         // Create settings buttons
 
         moveToButtonCoords(i++, p);
         controlList.add(new InvTweaksGuiTooltipButton(ID_SHORTCUTS_HELP, p.getX() + 130, p.getY(), 20, 20, "?",
                 "Shortcuts help"));
-        InvTweaksGuiTooltipButton shortcutsBtn = new InvTweaksGuiTooltipButton(ID_SHORTCUTS, p.getX(), p.getY(), 130,
+        @NotNull InvTweaksGuiTooltipButton shortcutsBtn = new InvTweaksGuiTooltipButton(ID_SHORTCUTS, p.getX(), p.getY(), 130,
                 20, computeBooleanButtonLabel(
                 InvTweaksConfig.PROP_ENABLE_SHORTCUTS, labelShortcuts),
-                StatCollector.translateToLocal(
+                I18n.translateToLocal(
                         "invtweaks.settings.shortcuts.tooltip"));
         controlList.add(shortcutsBtn);
 
         moveToButtonCoords(i++, p);
-        InvTweaksGuiTooltipButton beforeBreakBtn = new InvTweaksGuiTooltipButton(ID_BEFORE_BREAK, p.getX(), p.getY(),
+        @NotNull InvTweaksGuiTooltipButton beforeBreakBtn = new InvTweaksGuiTooltipButton(ID_BEFORE_BREAK, p.getX(), p.getY(),
                 computeBooleanButtonLabel(
                         InvTweaksConfig.PROP_AUTO_REFILL_BEFORE_BREAK,
                         labelAutoRefillBeforeBreak),
-                StatCollector.translateToLocal(
+                I18n.translateToLocal(
                         "invtweaks.settings.beforebreak.tooltip"));
         controlList.add(beforeBreakBtn);
 
         moveToButtonCoords(i++, p);
-        InvTweaksGuiTooltipButton autoRefillBtn = new InvTweaksGuiTooltipButton(ID_AUTO_REFILL, p.getX(), p.getY(),
+        @NotNull InvTweaksGuiTooltipButton autoRefillBtn = new InvTweaksGuiTooltipButton(ID_AUTO_REFILL, p.getX(), p.getY(),
                 computeBooleanButtonLabel(
                         InvTweaksConfig.PROP_ENABLE_AUTO_REFILL,
-                        labelAutoRefill), StatCollector
+                        labelAutoRefill), I18n
                 .translateToLocal(
                         "invtweaks.settings.autorefill.tooltip"));
         controlList.add(autoRefillBtn);
 
         moveToButtonCoords(i++, p);
         controlList.add(new InvTweaksGuiTooltipButton(ID_MORE_OPTIONS, p.getX(), p.getY(), labelMoreOptions,
-                StatCollector.translateToLocal(
+                I18n.translateToLocal(
                         "invtweaks.settings.moreoptions.tooltip")));
 
         controlList.add(new InvTweaksGuiTooltipButton(ID_BUG_SORTING, 5, this.height - 20, 100, 20,
@@ -104,20 +109,19 @@ public class InvTweaksGuiSettings extends InvTweaksGuiSettingsAbstract {
 
         //noinspection UnusedAssignment
         moveToButtonCoords(i++, p);
-        InvTweaksGuiTooltipButton middleClickBtn = new InvTweaksGuiTooltipButton(ID_MIDDLE_CLICK, p.getX(), p.getY(),
+        @NotNull InvTweaksGuiTooltipButton middleClickBtn = new InvTweaksGuiTooltipButton(ID_MIDDLE_CLICK, p.getX(), p.getY(),
                 computeBooleanButtonLabel(
                         InvTweaksConfig.PROP_ENABLE_MIDDLE_CLICK,
                         labelMiddleClick),
-                StatCollector.translateToLocal(
+                I18n.translateToLocal(
                         "invtweaks.settings.middleclick.tooltip"));
         controlList.add(middleClickBtn);
 
         // Check if links to files are supported, if not disable the buttons
         if(!Desktop.isDesktopSupported()) {
             controlList.stream().filter(InvTweaksObfuscation::isGuiButton).forEach(o -> {
-                GuiButton guiButton = (GuiButton) o;
-                if(guiButton.id >= ID_EDITRULES && guiButton.id <= ID_HELP) {
-                    guiButton.enabled = false;
+                if(o.id >= ID_EDITRULES && o.id <= ID_HELP) {
+                    o.enabled = false;
                 }
             });
         }
@@ -128,7 +132,7 @@ public class InvTweaksGuiSettings extends InvTweaksGuiSettingsAbstract {
     }
 
     @Override
-    protected void actionPerformed(GuiButton guibutton) {
+    protected void actionPerformed(@NotNull GuiButton guibutton) {
         super.actionPerformed(guibutton);
 
         // GuiButton

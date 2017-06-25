@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.INetHandler;
 import net.minecraft.network.NetHandlerPlayServer;
+import org.jetbrains.annotations.NotNull;
 
 public class ITPacketSortComplete implements ITPacket {
     @Override
@@ -19,8 +20,8 @@ public class ITPacketSortComplete implements ITPacket {
     @Override
     public void handle(INetHandler handler) {
         if(handler instanceof NetHandlerPlayServer) {
-            NetHandlerPlayServer serverHandler = (NetHandlerPlayServer) handler;
-            EntityPlayerMP player = serverHandler.playerEntity;
+            @NotNull NetHandlerPlayServer serverHandler = (NetHandlerPlayServer) handler;
+            EntityPlayerMP player = serverHandler.player;
 
             player.sendContainerToPlayer(player.openContainer);
         }

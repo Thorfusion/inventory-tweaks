@@ -7,6 +7,9 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -41,13 +44,13 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         shortcuts.clear();
 
         // Register shortcut mappings
-        Map<String, String> keys = config.getProperties(InvTweaksConfig.PROP_SHORTCUT_PREFIX);
+        @NotNull Map<String, String> keys = config.getProperties(InvTweaksConfig.PROP_SHORTCUT_PREFIX);
         for(String key : keys.keySet()) {
-            String[] keyMappings = keys.get(key).split("[ ]*,[ ]*");
-            InvTweaksShortcutType shortcutType = InvTweaksShortcutType.fromConfigKey(key);
+            @NotNull String[] keyMappings = keys.get(key).split("[ ]*,[ ]*");
+            @Nullable InvTweaksShortcutType shortcutType = InvTweaksShortcutType.fromConfigKey(key);
             if(shortcutType != null) {
-                for(String keyMapping : keyMappings) {
-                    String[] keysToHold = keyMapping.split("\\+");
+                for(@NotNull String keyMapping : keyMappings) {
+                    @NotNull String[] keysToHold = keyMapping.split("\\+");
                     registerShortcutMapping(shortcutType, new InvTweaksShortcutMapping(keysToHold));
                 }
             }
@@ -61,7 +64,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         registerShortcutMapping(InvTweaksShortcutType.MOVE_DOWN, new InvTweaksShortcutMapping(downKeyCode));
 
         // Add hotbar shortcuts (1-9) mappings
-        int[] hotbarKeys = {
+        @NotNull int[] hotbarKeys = {
                 Keyboard.KEY_1, Keyboard.KEY_2, Keyboard.KEY_3, Keyboard.KEY_4, Keyboard.KEY_5, Keyboard.KEY_6,
                 Keyboard.KEY_7, Keyboard.KEY_8, Keyboard.KEY_9, Keyboard.KEY_NUMPAD1, Keyboard.KEY_NUMPAD2,
                 Keyboard.KEY_NUMPAD3, Keyboard.KEY_NUMPAD4, Keyboard.KEY_NUMPAD5, Keyboard.KEY_NUMPAD6,
@@ -77,12 +80,12 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         pressedKeys.put(Keyboard.KEY_RSHIFT, false);
     }
 
-    private void registerShortcutMapping(InvTweaksShortcutType type, InvTweaksShortcutMapping mapping) {
+    private void registerShortcutMapping(InvTweaksShortcutType type, @NotNull InvTweaksShortcutMapping mapping) {
         // Register shortcut
         if(shortcuts.containsKey(type)) {
             shortcuts.get(type).add(mapping);
         } else {
-            List<InvTweaksShortcutMapping> newMappingList = new LinkedList<>();
+            @NotNull List<InvTweaksShortcutMapping> newMappingList = new LinkedList<>();
             newMappingList.add(mapping);
             shortcuts.put(type, newMappingList);
         }
@@ -95,7 +98,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
     public void handleShortcut() {
         try {
             // Init shortcut
-            ShortcutConfig shortcutToTrigger = computeShortcutToTrigger();
+            @Nullable ShortcutConfig shortcutToTrigger = computeShortcutToTrigger();
             if(shortcutToTrigger != null) {
                 int ex = Mouse.getEventX(), ey = Mouse.getEventY();
 
@@ -111,16 +114,16 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                 // at [0, 0] because of the mouse reset).
                 Mouse.setCursorPosition(ex, ey);
             }
-
         } catch(Exception e) {
             InvTweaks.logInGameErrorStatic("invtweaks.shortcut.error", e);
         }
     }
 
+    @Nullable
     public ShortcutSpecification computeCurrentShortcut() {
-        ShortcutSpecification.Action action = ShortcutSpecification.Action.MOVE;
-        ShortcutSpecification.Target target = ShortcutSpecification.Target.UNSPECIFIED;
-        ShortcutSpecification.Scope scope = ShortcutSpecification.Scope.ONE_STACK;
+        @NotNull ShortcutSpecification.Action action = ShortcutSpecification.Action.MOVE;
+        @NotNull ShortcutSpecification.Target target = ShortcutSpecification.Target.UNSPECIFIED;
+        @NotNull ShortcutSpecification.Scope scope = ShortcutSpecification.Scope.ONE_STACK;
 
         updatePressedKeys();
 
@@ -162,14 +165,14 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
     }
 
     private ShortcutConfig computeShortcutToTrigger() {
-        ShortcutSpecification shortcut = computeCurrentShortcut();
+        @Nullable ShortcutSpecification shortcut = computeCurrentShortcut();
 
-        ShortcutConfig shortcutConfig = new ShortcutConfig();
+        @NotNull ShortcutConfig shortcutConfig = new ShortcutConfig();
 
         container = InvTweaks.getCurrentContainerManager();
-        Slot slot = InvTweaksObfuscation.getSlotAtMousePosition((GuiContainer) getCurrentScreen());
+        @Nullable Slot slot = InvTweaksObfuscation.getSlotAtMousePosition((GuiContainer) getCurrentScreen());
         // If a valid and not empty slot is clicked
-        if(shortcut != null && slot != null && (slot.getHasStack() || getHeldStack() != null)) {
+        if(shortcut != null && slot != null && (slot.getHasStack() || !getHeldStack().isEmpty())) {
             int slotNumber = getSlotNumber(slot);
 
             // Set shortcut origin
@@ -188,7 +191,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                     // Compute shortcut target
                     if(shortcut.getTarget() == ShortcutSpecification.Target.HOTBAR_SLOT) {
                         shortcutConfig.toSection = ContainerSection.INVENTORY_HOTBAR;
-                        InvTweaksShortcutMapping hotbarShortcut = isShortcutDown(
+                        @Nullable InvTweaksShortcutMapping hotbarShortcut = isShortcutDown(
                                 InvTweaksShortcutType.MOVE_TO_SPECIFIC_HOTBAR_SLOT);
                         if(hotbarShortcut != null && !hotbarShortcut.getKeyCodes().isEmpty()) {
                             String keyName = Keyboard.getKeyName(hotbarShortcut.getKeyCodes().get(0));
@@ -196,7 +199,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                         }
                     } else {
                         // Compute targetable sections in order
-                        List<ContainerSection> orderedSections = new ArrayList<>();
+                        @NotNull List<ContainerSection> orderedSections = new ArrayList<>();
 
                         // (Top part)
                         if(container.hasSection(ContainerSection.CHEST)) {
@@ -208,8 +211,9 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                         } else if(container.hasSection(ContainerSection.FURNACE_IN)) {
                             orderedSections.add(ContainerSection.FURNACE_IN);
                         } else if(container.hasSection(ContainerSection.BREWING_INGREDIENT)) {
-                            if(shortcutConfig.fromStack != null) {
-                                if(shortcutConfig.fromStack.getItem() == Item.itemRegistry.getObject("potion")) {
+                            if(!shortcutConfig.fromStack.isEmpty()) {
+                                // TODO: ResourceLocation
+                                if(shortcutConfig.fromStack.getItem() == Item.REGISTRY.getObject(new ResourceLocation("potion"))) {
                                     orderedSections.add(ContainerSection.BREWING_BOTTLES);
                                 } else {
                                     orderedSections.add(ContainerSection.BREWING_INGREDIENT);
@@ -305,14 +309,14 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                 .containsKey(getKeyBindingBackKeyCode()));
     }
 
-    private void runShortcut(ShortcutConfig shortcut) throws TimeoutException {
+    private void runShortcut(@NotNull ShortcutConfig shortcut) throws TimeoutException {
         // Try to put held item down
-        if(getHeldStack() != null) {
-            Slot slot = InvTweaksObfuscation.getSlotAtMousePosition((GuiContainer) getCurrentScreen());
+        if(!getHeldStack().isEmpty()) {
+            @Nullable Slot slot = InvTweaksObfuscation.getSlotAtMousePosition((GuiContainer) getCurrentScreen());
             if(slot != null) {
                 int slotNumber = getSlotNumber(slot);
                 container.putHoldItemDown(container.getSlotSection(slotNumber), container.getSlotIndex(slotNumber));
-                if(getHeldStack() != null) {
+                if(!getHeldStack().isEmpty()) {
                     return;
                 }
             } else {
@@ -337,7 +341,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                                 dropAll(shortcut, shortcut.fromStack);
                                 break;
                             case EVERYTHING:
-                                dropAll(shortcut, null);
+                                dropAll(shortcut, ItemStack.EMPTY);
                                 break;
                         }
                     }
@@ -348,7 +352,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
 
                         switch(shortcut.scope) {
                             case ONE_STACK: {
-                                Slot slot = container.getSlot(shortcut.fromSection, shortcut.fromIndex);
+                                @Nullable Slot slot = container.getSlot(shortcut.fromSection, shortcut.fromIndex);
                                 if(slot.getHasStack()) {
                                     toIndex = getNextTargetIndex(shortcut, slot.getStack());
                                     if(shortcut.fromSection != ContainerSection.CRAFTING_OUT && shortcut.toSection != ContainerSection.ENCHANTMENT) {
@@ -372,7 +376,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                             }
 
                             case ONE_ITEM: {
-                                Slot slot = container.getSlot(shortcut.fromSection, shortcut.fromIndex);
+                                @Nullable Slot slot = container.getSlot(shortcut.fromSection, shortcut.fromIndex);
                                 if(slot.getHasStack()) {
                                     toIndex = getNextTargetIndex(shortcut, slot.getStack());
                                     container.moveSome(shortcut.fromSection, shortcut.fromIndex, shortcut.toSection,
@@ -391,10 +395,10 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                             }
 
                             case EVERYTHING: {
-                                moveAll(shortcut, null);
+                                moveAll(shortcut, ItemStack.EMPTY);
                                 if(shortcut.fromSection == ContainerSection.INVENTORY_HOTBAR && shortcut.toSection == ContainerSection.CHEST) {
                                     shortcut.fromSection = ContainerSection.INVENTORY_HOTBAR;
-                                    moveAll(shortcut, null);
+                                    moveAll(shortcut, ItemStack.EMPTY);
                                 }
                                 break;
                             }
@@ -406,8 +410,8 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         }
     }
 
-    private void dropAll(ShortcutConfig shortcut, ItemStack stackToMatch) {
-        container.getSlots(shortcut.fromSection).stream().filter(slot -> slot.getHasStack() && (stackToMatch == null || areSameItemType(stackToMatch, slot.getStack()))).forEach(slot -> {
+    private void dropAll(@NotNull ShortcutConfig shortcut, @NotNull ItemStack stackToMatch) {
+        container.getSlots(shortcut.fromSection).stream().filter(slot -> slot.getHasStack() && (stackToMatch.isEmpty()|| areSameItemType(stackToMatch, slot.getStack()))).forEach(slot -> {
             int fromIndex = container.getSlotIndex(getSlotNumber(slot));
             while(slot.getHasStack()) {
                 container.drop(shortcut.fromSection, fromIndex);
@@ -415,14 +419,14 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         });
     }
 
-    private void moveAll(ShortcutConfig shortcut, ItemStack stackToMatch) throws TimeoutException {
+    private void moveAll(@NotNull ShortcutConfig shortcut, @NotNull ItemStack stackToMatch) {
         int toIndex = Integer.MIN_VALUE; // This will always get overwritten before being used, but -1 caused a rapid break.
         int newIndex;
 
         boolean success;
 
-        for(Slot slot : container.getSlots(shortcut.fromSection)) {
-            if(slot.getHasStack() && (stackToMatch == null || areSameItemType(stackToMatch, slot.getStack()))) {
+        for(@NotNull Slot slot : container.getSlots(shortcut.fromSection)) {
+            if(slot.getHasStack() && (stackToMatch.isEmpty() || areSameItemType(stackToMatch, slot.getStack()))) {
                 int fromIndex = container.getSlotIndex(getSlotNumber(slot));
                 toIndex = getNextTargetIndex(shortcut, slot.getStack());
 
@@ -432,6 +436,12 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
                         !(shortcut.fromSection == shortcut.toSection && fromIndex == toIndex)) {
                     success = container.move(shortcut.fromSection, fromIndex, shortcut.toSection, toIndex);
                     newIndex = getNextTargetIndex(shortcut, slot.getStack());
+
+                    // This can lead to an infinite loop, but represents some part of the process having gone wrong.
+                    // So we want information on why.
+                    if(success && newIndex == toIndex && slot.getHasStack()) {
+                        throw new RuntimeException("Inventory in invalid sate after move");
+                    }
 
                     // Continue if movement succeeded, there is another slot to try, or we're dropping items.
                     // In reverse: fail if movement failed, AND there are no other slots AND we're not dropping.
@@ -448,7 +458,7 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         }
     }
 
-    private int getNextTargetIndex(ShortcutConfig shortcut, ItemStack current) {
+    private int getNextTargetIndex(@NotNull ShortcutConfig shortcut, @NotNull ItemStack current) {
 
         if(shortcut.action == ShortcutSpecification.Action.DROP) {
             return DROP_SLOT;
@@ -459,10 +469,10 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
         // Try to merge with existing slot
         if(!shortcut.forceEmptySlot) {
             int i = 0;
-            for(Slot slot : container.getSlots(shortcut.toSection)) {
+            for(@NotNull Slot slot : container.getSlots(shortcut.toSection)) {
                 if(slot.getHasStack()) {
-                    ItemStack stack = slot.getStack();
-                    if(InvTweaksObfuscation.areItemsStackable(current, stack) && stack.stackSize < stack
+                    @NotNull ItemStack stack = slot.getStack();
+                    if(InvTweaksObfuscation.areItemsStackable(current, stack) && stack.getCount() < stack
                             .getMaxStackSize()) {
                         result = i;
                         break;
@@ -492,10 +502,11 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
      *
      * @return The mapping that triggered the shortcut
      */
+    @Nullable
     public InvTweaksShortcutMapping isShortcutDown(InvTweaksShortcutType type) {
         List<InvTweaksShortcutMapping> mappings = shortcuts.get(type);
         if(mappings != null) {
-            for(InvTweaksShortcutMapping mapping : mappings) {
+            for(@NotNull InvTweaksShortcutMapping mapping : mappings) {
                 if(mapping.isTriggered(pressedKeys)) {
                     return mapping;
                 }
@@ -505,11 +516,16 @@ public class InvTweaksHandlerShortcuts extends InvTweaksObfuscation {
     }
 
     private static class ShortcutConfig {
-        public ShortcutSpecification.Action action = null;
-        public ShortcutSpecification.Scope scope = null;
+        @NotNull
+        public ShortcutSpecification.Action action = ShortcutSpecification.Action.MOVE;
+        @NotNull
+        public ShortcutSpecification.Scope scope = ShortcutSpecification.Scope.ONE_STACK;
+        @Nullable
         public ContainerSection fromSection = null;
         public int fromIndex = -1;
-        public ItemStack fromStack = null;
+        @NotNull
+        public ItemStack fromStack = ItemStack.EMPTY;
+        @Nullable
         public ContainerSection toSection = null;
         public int toIndex = -1;
         public boolean forceEmptySlot = false;
