@@ -33,7 +33,6 @@ temp/
 reobf/
 CHANGELOG
 LICENSE.txt
-*.bat
 *.sh
 
 # Misc
