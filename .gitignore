@@ -8,7 +8,6 @@ invtweaks_docs/_build
 launcher/
 .gradle/
 *.zip
-*.jar
 
 # Tmp files
 *~
