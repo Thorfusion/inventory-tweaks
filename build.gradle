@@ -79,11 +79,6 @@ task deobfJar(type: Jar) {
     }
 }
 
-artifacts {
-    archives apiJar
-    archives deobfJar
-}
-
 processResources
 {
     inputs.property "version", config.mod_version
@@ -132,6 +127,10 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            artifactId = rootProject.name
+            groupId = project.group
+            version = project.version
+            artifacts = [apiJar, deobfJar]
             components.java.withVariantsFromConfiguration(configurations.runtimeElements) {
                 skip()
             }
