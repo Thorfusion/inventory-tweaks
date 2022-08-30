@@ -96,6 +96,11 @@ processResources
     }
 }
 
+artifacts {
+    archives apiJar
+    archives deobfJar
+}
+
 artifactory {
     contextUrl = System.getenv("MAVEN_URL")
     publish {
@@ -126,11 +131,10 @@ artifactory {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from components.java
             artifactId = rootProject.name
             groupId = project.group
             version = project.version
-            artifacts = [apiJar, deobfJar]
+            artifacts = [jar, apiJar, deobfJar]
             components.java.withVariantsFromConfiguration(configurations.runtimeElements) {
                 skip()
             }
